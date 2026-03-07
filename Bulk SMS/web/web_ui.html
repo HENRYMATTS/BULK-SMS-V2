@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="pico.blue.min.css">
+    <script src="htmx.js"></script>
+    <title>Bulk SMS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* New Styles for the Title */
+        #title {
+            text-align: center;
+            /* Center the text on the page */
+            font-size: 3em;
+            /* Make the font big */
+            font-weight: 900;
+            /* Make the text extra **bold** */
+            font-style: italic;
+            /* Apply the **slightly italic** style */
+            color: #333;
+            /* Dark color for contrast */
+            margin-bottom: 8px;
+            /* The 3D-like shadow effect */
+            text-shadow:
+                /* First shadow: Dark, slightly offset to simulate depth */
+                2px 2px 0 #555,
+                /* Second shadow: Lighter, further offset for the main 3D feel */
+                4px 4px 0 #777,
+                /* Third shadow: Subtle large blur for general atmosphere */
+                5px 5px 10px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Styles for the Connection Status Indicator */
+        #status-indicator {
+            display: inline-block; /* Essential to allow setting width/height */
+            width: 40px;          /* Define the size of the circle */
+            height: 40px;
+            
+            border-radius: 50%;   /* CRUCIAL: Makes the square a circle */
+            border: 3px solid black; /* Small border for definition */
+            background-color:white; /* Initial state: Red (Bootstrap red/danger color) */
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.4); /* Subtle glow/depth */
+            transition: background-color 0.3s ease-in-out; /* Smooth color change */
+        }
+
+        
+        .main {
+            /* border: 2px solid black; */
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            justify-content: end;
+        }
+
+        #hub {
+            border: 2px solid black;
+            background-color: black;
+            display: flex;
+            width: fit-content;
+
+            gap: 1px;
+        }
+
+        .port {
+            background-color: white;
+            border: 2px solid black;
+            border-radius: 7px;
+            width: 40px;
+            height: 40px;
+            margin-top: 6px;
+            margin-bottom: 1px;
+            margin-right: 1px;
+            margin-left: 1px;
+        }
+
+        /* New styles for the container */
+        .port-container {
+            display: flex;
+            /* Allows vertical stacking */
+            flex-direction: column;
+            align-items: center;
+            /* Centers the label and port horizontally */
+            margin-top: 4px;
+            /* To account for the removed margins on .port */
+            background-color: black;
+        }
+
+        .port-container label {
+            font-size: 0.58em;
+            /* Smaller font for the label */
+            font-weight: bold;
+            
+            /* Dark color for better visibility */
+            margin-bottom: 0px;
+            /* Small gap between label and port */
+            text-align: center;
+        }
+
+
+        #hub-wrapper {
+            display: flex;
+            flex-direction: column;
+            /* Stack elements vertically (button then hub) */
+            align-items: center;
+            /* Center the button and hub horizontally */
+            padding: 2px;
+        }
+
+        .port_label {
+            color: white;
+            font-weight: bold;
+            font-size: 0.75em;
+            font-family: Arial, sans-serif;
+            font-style: italic;
+        }
+
+        #connect-button {
+            margin-bottom: 20px;
+            margin-top: 6px;
+        }
+
+        .buttons {
+            /* Base Button Properties */
+            background-color: #f0f0f0;
+            border-color: black;
+            color: black;
+            font-weight: bold;
+            font-size: 0.75em;
+            font-family: Arial, sans-serif;
+            font-style: italic;
+            border: 3px solid black;
+            border-radius: 14px;
+            padding: 6px 15px;
+            /* Added more padding to make the button bigger */
+
+            /* 1. The Heavy 3D Look: A large, dark, vertical shadow */
+            box-shadow:
+                3px 4px 0 0px #000,
+                /* Thick, dark shadow giving the heavy 3D depth */
+                0 5px 10px rgba(0, 0, 0, 0.3);
+            /* Soft shadow for general lift */
+
+            transition: all 0.1s ease-out;
+            /* Slower transition for a "heavier" feel */
+        }
+
+        /* Style for when the mouse hovers over the button */
+        .buttons:hover {
+            cursor: pointer;
+            /* Slight lift and soften on hover */
+            box-shadow:
+            3px 5px 0 0 #000, /* Slightly higher offset on hover */
+            0 8px 15px rgba(0, 0, 0, 0.4);
+        }
+
+        /* 3. Style for when the button is ACTIVELY being pressed down */
+    .buttons:active {
+            /* "Push-in" effect: */
+            /* CHANGE 1: Transform translateY reduced to match the new shadow offset (4px) */
+            transform: translateY(4px);
+            /* Shadow is hidden/removed */
+            box-shadow:
+                0 0 0 0 #444,
+                /* Small shadow to show it's pressed into the surface */
+                0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        #submit-button {
+            align-self: center;
+            /* Center the button within the form */
+            width: fit-content;
+            /* Adjust width to fit content */
+        }
+
+        /* NEW STYLES FOR DIV1 */
+        #div1 {
+            /* You can adjust the width as needed. Setting a fixed width here 
+           makes the text area size more predictable */
+            /* width: 300px;  */
+            /* Reset justify-content to start if you want content on the left */
+            justify-content: center;
+            align-items: center;
+            height: fit-content;
+            flex-direction: row;
+            /* Stack the form elements vertically */
+        }
+
+        #group-form {
+            display: flex;
+            flex-direction: column;
+            width: 50%;
+
+        }
+
+        #input-groups {
+            /* Ensure the textarea takes up the full width of the form */
+            width: 100%;
+            height: 10%;
+            border: 2px solid black;
+            border-radius: 13px;
+            padding: 2px;
+            font-size: 0.67em;
+            font-weight: bold;
+            font-family: Arial, sans-serif;
+            font-style: italic;
+            background-color: white;
+            color: black;
+            padding-left: 12px;
+            /* Using Pico's class for default styling, but you can override here */
+        }
+        
+        #message-body-input {
+            /* Ensure the textarea takes up the full width of the form */
+            width: 100%;
+            height: 10%;
+            border: 2px solid black;
+            border-radius: 13px;
+            padding: 2px;
+            font-size: 0.67em;
+            font-weight: bold;
+            font-family: Arial, sans-serif;
+            font-style: italic;
+            background-color: white;
+            color: black;
+            padding-left: 12px;
+            margin-top: 8px; /* Added spacing */
+        }
+
+
+        /* Styles for the new logging section */
+        #div2 {
+            /* Use flexbox to center the log container */
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: stretch;
+          
+
+        }
+
+        #hub_label{
+            font-size: 0.7em;
+            font-weight: bold;
+            color:rgb(122, 122, 3);
+            margin-bottom: 1px;
+            margin-right: 320px;
+            font-family: Arial, sans-serif;
+            font-style: italic;
+            text-transform: lowercase;
+        }
+
+
+        #hub-wrapper {
+            width: fit-content;
+
+        }
+
+        #hardware-init-container {
+            display: flex;
+            flex-direction: column;
+            /* Stack label and log box vertically */
+            align-items: center;
+            width: 350px;
+            /* Constrain the width */
+            margin-top: 20px;
+        }
+
+        #log-label {
+            /* Style for the 'hardware_init' label */
+            font-size: 0.7em;
+            font-weight: bold;
+            color:rgb(122, 122, 3);
+            margin-bottom: 2px;
+            margin-right: 260px;
+            font-family: Arial, sans-serif;
+            font-style: italic;
+           
+            text-transform: lowercase;
+            /* Ensures the label is in small letters */
+        }
+
+        #hardware-log {
+            /* The actual log display box */
+            width: 100%;
+            height: 150px;
+            /* Fixed height for log area */
+            border: 3px solid black;
+            background-color:black;
+            /* Light background for log readability */
+            overflow-y: scroll;
+            /* **CRUCIAL**: Adds a scrollbar when content overflows */
+            padding: 8px;
+            font-family: monospace;
+            /* Monospace font is standard for logs */
+            font-size: 0.75em;
+            color: black;
+            line-height: 1.2;
+            font-family: Arial, sans-serif;
+            font-style: italic;
+            border: 3px solid black;
+            border-radius: 14px;
+        }
+
+        #div2_child1{
+            margin-left:16px ;
+            width: 26%;
+            
+        }
+        #div2_child2{
+            display: flex;
+            flex-direction: column;
+            margin-top: 35px;
+            width: 38%;
+           
+           
+        }
+        #div2_child3{
+            margin-right: 10px;
+           
+
+        }
+          
+        
+
+        /* DB ENTRY FORM STYLES */
+        #save-number-form {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            
+            font-family: Arial, sans-serif;
+            font-style: italic;   
+            font-weight: bold;    
+        }
+        
+        #save-number-form h6{
+            margin-top: 8px;
+            margin-bottom: 14px;
+            font-size: 0.75em;
+            color:white;
+            font-family: Arial, sans-serif;
+            font-style: italic;
+            text-align: center;
+            font-weight: bold;
+           
+            
+        }
+
+        #phone-number-input, #group-name-input {
+           
+            border: 2px solid black;
+            border-radius: 15px;
+            font-size: 0.7em;
+            font-family: Arial, sans-serif;
+            font-style: italic;
+            font-weight: bold;
+            width: 100%;
+            
+        }
+
+        #save-update-button {
+            margin-top: 5px;
+            width: fit-content;
+            align-self: center;
+        }
+
+        /* DB STATUS AREA */
+        #save-status-area {
+            /* ADD THIS: Set a defined, maximum width */
+            max-width: 300px; /* Adjust this value to fit your layout requirements */
+            width: 100%; /* Ensures it fills its parent container up to max-width */
+
+            /* ADD THIS: Crucial for breaking long, unbroken strings */
+            word-break: break-all;
+            background-color:black;
+            margin-top: 1px;
+            border-radius: 12px;
+            text-align: center;
+            font-family: monospace;
+            font-style: italic;
+            border: 3px solid black;
+            font-size: 0.8em;
+            color: green; 
+            font-weight: bold;
+
+
+              /* The actual log display box */
+            width: 100%;
+            height: 150px;
+            /* Fixed height for log area */
+           
+            /* Light background for log readability */
+            overflow-y: scroll;
+            /* **CRUCIAL**: Adds a scrollbar when content overflows */
+            padding: 8px;
+        
+            /* Monospace font is standard for logs */
+            font-size: 0.75em;
+            border-radius: 14px;
+        }
+
+
+/* ...................................................................................................... */
+
+        #delete-number-form h6{
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            
+            font-family: Arial, sans-serif;
+            font-style: italic;   
+            font-weight: bold;    
+
+        }
+
+        #delete-number-input{
+             border: 2px solid black;
+            border-radius: 15px;
+            font-size: 0.7em;
+            font-family: Arial, sans-serif;
+            font-style: italic;
+            font-weight: bold;
+            width: 100%;
+        }
+        #delete-button{
+             margin-top: 5px;
+            width: fit-content;
+            align-self: center;
+        }
+
+        .labels{
+            color:rgb(122, 122, 3);
+            font-size: 0.7em;
+            font-family: Arial, sans-serif;
+            font-style: italic;
+            font-weight: bold;
+            margin-bottom: 0px;
+            /* margin-top: 3px; */
+        }
+
+        #serial {
+            overflow-y: scroll;
+            background-color: black;
+            border: 2px solid black;
+            border-radius: 12px;
+            font-size: 0.7em;
+            font-family: Arial, sans-serif;
+            font-style: italic;
+            font-weight: bold;
+            width:100%;
+            height: 500px;
+            color: black;
+            padding-left: 20px;
+            padding-top: 12px;
+        }
+                /* Optional: Style the scrollbar to look more modern */
+        #serial::-webkit-scrollbar, #hardware-log::-webkit-scrollbar {
+            width: 8px;
+        }
+        #serial::-webkit-scrollbar-thumb, #hardware-log::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 4px;
+        }
+        .buttons.success {
+         background-color: green;
+        color: white;
+}
+.buttons.secondary {
+    background-color: gray;
+}
+.buttons.warning {
+    background-color: orange;
+}
+    </style>
+</head>
+
+<div id="statsModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:10000; overflow-y:auto; padding:20px; backdrop-filter: blur(5px);">
+    <div style="background:#11191f; margin:5% auto; width:95%; max-width:800px; padding:25px; border-radius:15px; border:2px solid #38bdf8; color:white; box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);">
+        
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid #38bdf8; padding-bottom:10px;">
+            <h2 style="margin:0; font-family:sans-serif;">📊 System Statistics & Tools</h2>
+            <button onclick="closeStatsModal()" style="background:#ef4444; color:white; border:none; padding:5px 15px; border-radius:5px; cursor:pointer; font-weight:bold;">Close X</button>
+        </div>
+
+        <!-- Feature 1: Count Numbers in Group(s) -->
+        <div style="background:#1e293b; padding:20px; border-radius:10px; margin-bottom: 20px;">
+            <h3 style="margin-top:0; color:#38bdf8;">Count Numbers in Group(s)</h3>
+            <p style="font-size: 0.9em; color:#94a3b8;">Enter group names separated by commas (or type 'ALL').</p>
+            
+            <div style="display:flex; gap:10px;">
+                <input type="text" id="checkGroupInput" placeholder="e.g., Church Group, Market Group" style="flex:1; padding:10px; border-radius:5px; border:1px solid #475569; background:#0f172a; color:white;">
+                <button onclick="checkGroupCount()" style="background:#10b981; color:white; border:none; padding:10px 20px; border-radius:5px; cursor:pointer; font-weight:bold;">Check Total</button>
+            </div>
+            
+            <div id="groupCountResult" style="margin-top:15px; font-size:1.2em; font-weight:bold; color:#fbbf24;">
+                </div>
+        </div>
+
+        <!-- Feature 2: SMS Capacity Planner -->
+        <!-- <div style="background:#1e293b; padding:20px; border-radius:10px;"> 
+            <h3 style="margin-top:0; color:#38bdf8;">⚙️ SMS Capacity Planner</h3>
+            <p style="font-size: 0.9em; color:#94a3b8;">Calculates hardware requirements based on the 30-minute safe limit and a 12% network retry buffer.</p>
+            
+            <div style="display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap;">
+                <div style="flex:1; min-width:120px;">
+                    <label style="color:#94a3b8; font-size:0.8em;">Total Recipients</label>
+                    <input type="number" id="calcRecipients" value="0" style="width:100%; padding:10px; border-radius:5px; border:1px solid #475569; background:#0f172a; color:white; box-sizing:border-box;">
+                </div>
+                <div style="flex:1; min-width:120px;">
+                    <label style="color:#94a3b8; font-size:0.8em;">Message Segments (1 = ≤160 chars)</label>
+                    <input type="number" id="calcSegments" value="1" min="1" style="width:100%; padding:10px; border-radius:5px; border:1px solid #475569; background:#0f172a; color:white; box-sizing:border-box;">
+                </div>
+                <div style="display:flex; align-items:flex-end;">
+                    <button onclick="calculateFramework()" style="background:#8b5cf6; color:white; border:none; padding:10px 20px; border-radius:5px; cursor:pointer; font-weight:bold; height:41px;">Generate Plan</button>
+                </div>
+            </div>
+            
+            <div id="frameworkResult" style="display:none; background:#0f172a; border:1px solid #475569; padding:15px; border-radius:8px;">
+                </div>
+        </div> -->
+
+
+
+        <div style="background:#1e293b; padding:20px; border-radius:10px;">
+    <h3 style="margin-top:0; color:#38bdf8;">⚙️ SMS Capacity Planner</h3>
+    <p style="font-size: 0.9em; color:#94a3b8;">Calculates hardware requirements based on the 30-minute safe limit and a 12% network retry buffer.</p>
+    
+    <div style="display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap;">
+        <div style="flex:1; min-width:120px;">
+            <label style="color:#94a3b8; font-size:0.8em;">Total Recipients</label>
+            <input type="number" id="calcRecipients" value="0" style="width:100%; padding:10px; border-radius:5px; border:1px solid #475569; background:#0f172a; color:white; box-sizing:border-box;">
+        </div>
+        <div style="flex:2; min-width:200px;">
+            <label style="color:#94a3b8; font-size:0.8em;">Message Text</label>
+            <textarea id="calcMessage" rows="2" placeholder="Type your message here..." style="width:100%; padding:10px; border-radius:5px; border:1px solid #475569; background:#0f172a; color:white; box-sizing:border-box; font-family:inherit;"></textarea>
+        </div>
+        <div style="display:flex; align-items:flex-end;">
+            <button onclick="calculateFramework()" style="background:#8b5cf6; color:white; border:none; padding:10px 20px; border-radius:5px; cursor:pointer; font-weight:bold; height:41px;">Generate Plan</button>
+        </div>
+    </div>
+    
+    <div id="frameworkResult" style="display:none; background:#0f172a; border:1px solid #475569; padding:15px; border-radius:8px;"></div>
+
+</div>
+
+
+
+    </div>
+</div>
+
+<body>
+    <div>
+         <h1 id="title">BULK SMS</h1>
+        <button onclick="openStatsModal()" style="background:#0284c7; color:white; padding:10px 20px; border:none; border-radius:8px; cursor:pointer; font-weight:bold; margin-left:10px;">Group Stats</button>
+    </div>
+   
+    <div id="root">
+        <div style="display: flex; flex-direction: column; " >
+            <h4 style=" font-size: 0.9em; font-weight: bold;
+            font-family: Arial, sans-serif;
+            font-style: italic;">System Status:</h4>
+            <div style=" margin-top: -8px;  margin-left: 40px;  width:fit-content;display:flex; align-items: center;">
+            <div id="status-indicator">
+            </div>
+            <span id="status-text" 
+            style="display:inline-block; font-weight: bold; margin-left: 3px; font-size: 0.7em;
+            font-family: Arial, sans-serif;
+            font-style: italic;">
+            IDLE</span>
+            </div>
+        </div>
+       
+        <div class="main" id="div1">
+            
+            <form id="group-form">
+                <textarea id="input-groups" name="queries" rows="2"
+                    placeholder="Enter Group / groups , one per line" required></textarea>
+                <textarea id="message-body-input" name="message_body" rows="4"
+                    placeholder="Enter the SMS Message content here" required></textarea>
+                <button type="submit" class="buttons" id="submit-button" >Send SMS</button>
+                <button type="button" class="buttons" id="stop-button" style="background:#ef4444;">Stop Sending</button>
+            </form>
+        </div>
+
+
+        <div id="div2">
+
+
+            <div id="div2_child1">
+               
+                <form id="save-number-form">
+                    <h6>Save / Update Database</h6>
+                    
+                    <label class ="labels" for="phone-number-input">Phone Number:</label>
+                    <input 
+                        type="text" 
+                        id="phone-number-input" 
+                        name="phone_number" 
+                        placeholder="25677xxxxxxx" 
+                        required
+                    >
+                    <div id="number-group-popup" style="display:none; position:absolute; background:#1e293b; color:white; border:1px solid #38bdf8; border-radius:5px; padding:5px 10px; font-size:0.7em; z-index:1000;"></div>
+
+                    <label class="labels" for="group-name-input">Group:</label>
+                    <input 
+                        type="text" 
+                        id="group-name-input" 
+                        name="group_name" 
+                        placeholder="Group" 
+                        required
+                    >
+
+                    <button type="submit" class="buttons" id="save-update-button">Save / Update </button>
+                    <label class="labels "> Database log</label>
+                    <div id="save-status-area">
+                        <p>Awaiting number and group entry...</p>
+                    </div>
+
+                </form>
+
+
+                <form id="delete-number-form" style="margin-top: 20px;">
+                    <h6>Delete Number & All Groups</h6>
+
+                    <label class ="labels" for="delete-number-input">Number to Delete:</label>
+                    <input 
+                        type="text" 
+                        id="delete-number-input" 
+                        name="delete_number" 
+                        placeholder="25677xxxxxxx" 
+                        required
+                    >
+
+                    <button type="submit" class="buttons" id="delete-button">Delete Number</button>
+                </form>
+                
+
+            </div>
+
+
+            <div id="div2_child2">
+                <div style="display: flex;justify-content: space-between; margin-bottom: 10px;">
+                    <label class="labels"> Serial</label>
+                    <button class="buttons" id="clear">  clear  </button>
+                </div>
+
+                <!-- Stats table container -->
+                <div id="stats-table-container" style="background:#1e293b; border-radius:8px; padding:10px; margin-bottom:10px; display:none;">
+                    <table style="width:100%; color:white; font-size:0.7em; border-collapse: collapse;">
+                        <thead id="stats-thead"></thead>
+                        <tbody id="stats-tbody"></tbody>
+                    </table>
+                </div>
+
+                <div id="serial">
+                    <p>Waiting for logs...</p>
+                </div>
+            </div>
+
+
+            <div id ="div2_child3">
+            <div id="hub-wrapper">
+                <button id="connect-button" class="buttons">CONNECT</button>
+                <div style="display:flex; align-items:center; gap:5px; margin-top:5px; margin-bottom:5px;">
+                <div id="airtel-indicator" style="width:12px; height:12px; border-radius:50%; background-color:gray; border:2px solid black;"></div>
+                <span style="color:white; font-size:0.7em; font-style:italic;">Airtel</span>
+             </div>
+                <label id="hub_label">hub</label>
+                <div id="hub">
+                    <div class="port-container">
+                        <label class="port_label">USB1</label>
+                        <div class="port" id="p1"></div>
+                    </div>
+
+
+                    <div class="port-container">
+                        <label class="port_label">USB2</label>
+                        <div class="port" id="p2"></div>
+                    </div>
+
+
+                    <div class="port-container">
+                        <label class="port_label">USB3</label>
+                        <div class="port" id="p3"></div>
+                    </div>
+
+                    <div class="port-container">
+                        <label class="port_label">USB4</label>
+                        <div class="port" id="p4"></div>
+                    </div>
+
+
+                    <div class="port-container">
+                        <label class="port_label">USB5</label>
+                        <div class="port" id="p5"></div>
+                    </div>
+
+
+                    <div class="port-container">
+                        <label class="port_label">USB6</label>
+                        <div class="port" id="p6"></div>
+                    </div>
+
+
+                    <div class="port-container">
+                        <label class="port_label">USB7</label>
+                        <div class="port" id="p7"></div>
+                    </div>
+
+
+                    <div class="port-container">
+                        <label class="port_label">USB8</label>
+                        <div class="port" id="p8"></div>
+                    </div>
+                </div>
+            </div>
+
+
+            <div id="hardware-init-container">
+                <label id="log-label">hardware_init</label>
+
+                <div id="hardware-log">
+                    <p>Waiting for connection...</p>
+                </div>
+
+            </div>
+            </div>
+        </div>
+
+
+    </div>
+
+
+    
+    <script type="text/javascript" src="/eel.js"></script>
+    <script type="text/javascript" src="apps.js"></script>
+    
+    <script>
+        // Check if the trigger function exists in app.js and call it
+        if (typeof js_trigger_initial_status_check === 'function') {
+            js_trigger_initial_status_check();
+        }
+    </script>
+    </body>
+</html>

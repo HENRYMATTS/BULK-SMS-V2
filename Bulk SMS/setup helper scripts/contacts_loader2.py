@@ -19,7 +19,8 @@ def extract_and_clean_numbers(file_path):
             
             # 2. Look for the Ugandan pattern (9 digits starting with 7)
             # This handles: 2567..., 07..., or just 7...
-            pattern = re.compile(r'(?:256|0)?(7\d{8})')
+            # pattern = re.compile(r'(?:256|0)?(7\d{8})')
+            pattern = re.compile(r'(?:\+?256|0)?(7\d{8})')
             matches = pattern.findall(clean_content)
             
             for m in matches:
